@@ -29,7 +29,6 @@ This guide will help you deploy your Personal AI Assistant on Streamlit Cloud.
    ├── tools/                    # Tools directory
    ├── requirements.txt          # Python dependencies
    ├── .streamlit/config.toml    # Streamlit configuration
-   ├── packages.txt              # System dependencies (if needed)
    ├── sample_data.csv           # Sample data
    ├── sample_report.txt         # Sample report
    └── README.md                 # Documentation

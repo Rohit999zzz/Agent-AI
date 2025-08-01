@@ -16,7 +16,6 @@ def check_files():
         'enhanced_main.py',
         'requirements.txt',
         '.streamlit/config.toml',
-        'packages.txt',
         'sample_data.csv',
         'sample_report.txt',
         'README.md'
