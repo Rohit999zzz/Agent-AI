@@ -106,104 +106,21 @@ def main():
                 st.write(f"**File Size:** {file_size:,} bytes")
                 st.write(f"**File Type:** {uploaded_file.type}")
         
-        # Show uploaded files with custom query functionality
+        # Show uploaded files list
         if st.session_state.uploaded_files:
             st.header("📋 Uploaded Files")
             for filename, filepath in st.session_state.uploaded_files.items():
-                with st.expander(f"📄 {filename}", expanded=False):
-                    # File info
-                    st.write(f"**Path:** {filepath}")
-                    
-                    # Custom query section
-                    st.subheader("🔍 Ask Custom Questions")
-                    
-                    # Query input
-                    query_key = f"query_{filename}"
-                    custom_query = st.text_area(
-                        "Ask a specific question about this file:",
-                        key=query_key,
-                        placeholder="e.g., What are the key insights from this data?",
-                        height=100
-                    )
-                    
-                    # Query buttons
-                    col1, col2, col3 = st.columns([1, 1, 1])
-                    
-                    with col1:
-                        if st.button("🔍 Analyze", key=f"analyze_{filename}"):
-                            if 'assistant' in st.session_state:
-                                analysis_prompt = f"Read {filepath} and provide a comprehensive analysis"
-                                st.session_state.messages.append({"role": "user", "content": analysis_prompt})
-                                with st.spinner("Analyzing..."):
-                                    response = st.session_state.assistant.chat(analysis_prompt)
-                                    st.session_state.messages.append({"role": "assistant", "content": response})
-                                st.rerun()
-                            else:
-                                st.error("Assistant not initialized")
-                    
-                    with col2:
-                        if st.button("❓ Custom Query", key=f"custom_{filename}"):
-                            if custom_query and 'assistant' in st.session_state:
-                                custom_prompt = f"Read {filepath} and answer this specific question: {custom_query}"
-                                st.session_state.messages.append({"role": "user", "content": custom_prompt})
-                                with st.spinner("Processing custom query..."):
-                                    response = st.session_state.assistant.chat(custom_prompt)
-                                    st.session_state.messages.append({"role": "assistant", "content": response})
-                                st.rerun()
-                            elif not custom_query:
-                                st.warning("Please enter a question first")
-                            else:
-                                st.error("Assistant not initialized")
-                    
-                    with col3:
-                        if st.button("🗑️ Delete", key=f"del_{filename}"):
-                            try:
-                                os.unlink(filepath)
-                                del st.session_state.uploaded_files[filename]
-                                st.rerun()
-                            except:
-                                st.error("Could not delete file")
-                    
-                    # Quick query suggestions
-                    st.subheader("💡 Quick Questions")
-                    quick_questions = []
-                    
-                    if filename.endswith('.csv'):
-                        quick_questions = [
-                            "What are the main trends in this data?",
-                            "Calculate the average of all numeric columns",
-                            "What are the top 5 values in this dataset?",
-                            "Are there any missing values in this data?",
-                            "What insights can you draw from this data?"
-                        ]
-                    elif filename.endswith('.pdf'):
-                        quick_questions = [
-                            "Summarize the key points from this document",
-                            "What are the main conclusions?",
-                            "Extract all important dates and numbers",
-                            "What are the recommendations in this document?",
-                            "List the key findings from this report"
-                        ]
-                    elif filename.endswith('.txt'):
-                        quick_questions = [
-                            "What are the main themes in this text?",
-                            "Summarize the key information",
-                            "What are the important points mentioned?",
-                            "Extract any numerical data from this text",
-                            "What insights can you provide from this content?"
-                        ]
-                    
-                    for i, question in enumerate(quick_questions):
-                        if st.button(question, key=f"quick_{filename}_{i}"):
-                            if 'assistant' in st.session_state:
-                                quick_prompt = f"Read {filepath} and answer: {question}"
-                                st.session_state.messages.append({"role": "user", "content": quick_prompt})
-                                with st.spinner("Processing..."):
-                                    response = st.session_state.assistant.chat(quick_prompt)
-                                    st.session_state.messages.append({"role": "assistant", "content": response})
-                                st.rerun()
-                            else:
-                                st.error("Assistant not initialized")
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"📄 {filename}")
+                with col2:
+                    if st.button("🗑️", key=f"del_{filename}"):
+                        try:
+                            os.unlink(filepath)
+                            del st.session_state.uploaded_files[filename]
+                            st.rerun()
+                        except:
+                            st.error("Could not delete file")
         
         st.header("📝 Example Queries")
         examples = [
@@ -255,13 +172,13 @@ def main():
     with col2:
         st.header("📊 Quick Actions")
         
-        # Quick file analysis buttons
-        if st.session_state.uploaded_files and 'assistant' in st.session_state:
-            st.subheader("Analyze Files")
+        # File analysis suggestions
+        if st.session_state.uploaded_files:
+            st.subheader("📁 Analyze Files")
             
             for filename, filepath in st.session_state.uploaded_files.items():
                 if filename.endswith('.csv'):
-                    if st.button(f"📊 Analyze {filename}", key=f"quick_analyze_{filename}"):
+                    if st.button(f"📊 {filename}", key=f"quick_analyze_{filename}"):
                         analysis_prompt = f"Read {filepath} and provide a summary of the data"
                         st.session_state.messages.append({"role": "user", "content": analysis_prompt})
                         with st.spinner("Analyzing..."):
@@ -270,7 +187,16 @@ def main():
                         st.rerun()
                 
                 elif filename.endswith('.pdf'):
-                    if st.button(f"📄 Read {filename}", key=f"quick_read_{filename}"):
+                    if st.button(f"📄 {filename}", key=f"quick_read_{filename}"):
+                        read_prompt = f"Read {filepath} and summarize the content"
+                        st.session_state.messages.append({"role": "user", "content": read_prompt})
+                        with st.spinner("Reading..."):
+                            response = st.session_state.assistant.chat(read_prompt)
+                            st.session_state.messages.append({"role": "assistant", "content": response})
+                        st.rerun()
+                
+                elif filename.endswith('.txt'):
+                    if st.button(f"📝 {filename}", key=f"quick_read_{filename}"):
                         read_prompt = f"Read {filepath} and summarize the content"
                         st.session_state.messages.append({"role": "user", "content": read_prompt})
                         with st.spinner("Reading..."):
@@ -278,7 +204,45 @@ def main():
                             st.session_state.messages.append({"role": "assistant", "content": response})
                         st.rerun()
         
-        st.subheader("Sample Data")
+        # Custom query suggestions
+        if st.session_state.uploaded_files:
+            st.subheader("💡 Custom Questions")
+            
+            for filename, filepath in st.session_state.uploaded_files.items():
+                if filename.endswith('.csv'):
+                    suggestions = [
+                        f"Analyze trends in {filename}",
+                        f"Calculate averages in {filename}",
+                        f"Find insights in {filename}",
+                        f"Check for missing data in {filename}"
+                    ]
+                elif filename.endswith('.pdf'):
+                    suggestions = [
+                        f"Summarize {filename}",
+                        f"Extract key points from {filename}",
+                        f"Find conclusions in {filename}",
+                        f"List recommendations in {filename}"
+                    ]
+                elif filename.endswith('.txt'):
+                    suggestions = [
+                        f"Summarize {filename}",
+                        f"Extract key information from {filename}",
+                        f"Find main themes in {filename}",
+                        f"List important points in {filename}"
+                    ]
+                
+                for suggestion in suggestions:
+                    if st.button(suggestion, key=f"suggest_{filename}_{suggestion}"):
+                        if 'assistant' in st.session_state:
+                            st.session_state.messages.append({"role": "user", "content": suggestion})
+                            with st.spinner("Processing..."):
+                                response = st.session_state.assistant.chat(suggestion)
+                                st.session_state.messages.append({"role": "assistant", "content": response})
+                            st.rerun()
+                        else:
+                            st.error("Assistant not initialized")
+        
+        st.subheader("📊 Sample Data")
         if st.button("📊 Load Sample CSV") and 'assistant' in st.session_state:
             sample_prompt = "Read sample_data.csv and calculate the total revenue"
             st.session_state.messages.append({"role": "user", "content": sample_prompt})
@@ -301,6 +265,7 @@ def main():
     <div style='text-align: center; color: #666;'>
         <p>🤖 Personal AI Assistant | Powered by Google Gemini | Built with Streamlit</p>
         <p>Upload files, ask questions, and get intelligent responses!</p>
+        <p><strong>💡 Tip:</strong> Ask questions about your uploaded files directly in the chat!</p>
     </div>
     """, unsafe_allow_html=True)
 
