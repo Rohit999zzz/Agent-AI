@@ -14,6 +14,20 @@ def save_uploaded_file(uploaded_file):
         st.error(f"Error saving file: {e}")
         return None
 
+def get_file_context():
+    """Get context about uploaded files for the assistant"""
+    if not st.session_state.uploaded_files:
+        return ""
+    
+    context = "\n\n**Available Files:**\n"
+    for filename, filepath in st.session_state.uploaded_files.items():
+        context += f"- {filename} (saved at: {filepath})\n"
+    context += "\nYou can ask questions about these files directly. For example:\n"
+    context += "- 'Tell me about the PDF file'\n"
+    context += "- 'Analyze the CSV data'\n"
+    context += "- 'What are the key points in the document?'\n"
+    return context
+
 def main():
     st.set_page_config(
         page_title="Personal AI Assistant",
@@ -115,11 +129,19 @@ def main():
                 with col2:
                     if st.button("🗑️", key=f"del_{filename}"):
                         try:
-                            os.unlink(filepath)
+                            # Check if file exists before trying to delete
+                            if os.path.exists(filepath):
+                                os.unlink(filepath)
+                            # Remove from session state regardless
                             del st.session_state.uploaded_files[filename]
+                            st.success(f"✅ {filename} deleted successfully!")
                             st.rerun()
-                        except:
-                            st.error("Could not delete file")
+                        except Exception as e:
+                            st.error(f"Could not delete {filename}: {str(e)}")
+                            # Still remove from session state even if file deletion fails
+                            if filename in st.session_state.uploaded_files:
+                                del st.session_state.uploaded_files[filename]
+                            st.rerun()
         else:
             st.write("No files uploaded yet")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -135,10 +157,13 @@ def main():
         
         for example in examples:
             if st.button(example, key=example):
-                # Add to chat
+                # Add file context to the example
+                file_context = get_file_context()
+                enhanced_example = example + file_context
+                
                 st.session_state.messages.append({"role": "user", "content": example})
                 with st.spinner("Processing..."):
-                    response = st.session_state.assistant.chat(example)
+                    response = st.session_state.assistant.chat(enhanced_example)
                     st.session_state.messages.append({"role": "assistant", "content": response})
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -171,6 +196,10 @@ def main():
                 if file_path:
                     st.session_state.uploaded_files[uploaded_file.name] = file_path
                     st.success(f"✅ {uploaded_file.name} uploaded!")
+                    
+                    # Auto-add a welcome message about the uploaded file
+                    welcome_msg = f"I've uploaded {uploaded_file.name}. You can now ask me questions about this file!"
+                    st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
                     st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         
@@ -191,6 +220,10 @@ def main():
                 if file_path:
                     st.session_state.uploaded_files[uploaded_file.name] = file_path
                     st.success(f"✅ {uploaded_file.name} uploaded!")
+                    
+                    # Auto-add a message about the new file
+                    new_file_msg = f"I've also uploaded {uploaded_file.name}. You can ask questions about any of the uploaded files!"
+                    st.session_state.messages.append({"role": "assistant", "content": new_file_msg})
                     st.rerun()
         
         # Chat input
@@ -200,10 +233,14 @@ def main():
             with st.chat_message("user"):
                 st.markdown(prompt)
             
+            # Enhance prompt with file context
+            file_context = get_file_context()
+            enhanced_prompt = prompt + file_context
+            
             # Get assistant response
             with st.chat_message("assistant"):
                 with st.spinner("🤔 Thinking..."):
-                    response = st.session_state.assistant.chat(prompt)
+                    response = st.session_state.assistant.chat(enhanced_prompt)
                     st.markdown(response)
             
             # Add assistant response to chat history
@@ -272,9 +309,13 @@ def main():
                 
                 for suggestion in suggestions:
                     if st.button(suggestion, key=f"suggest_{filename}_{suggestion}"):
+                        # Add file context to the suggestion
+                        file_context = get_file_context()
+                        enhanced_suggestion = suggestion + file_context
+                        
                         st.session_state.messages.append({"role": "user", "content": suggestion})
                         with st.spinner("Processing..."):
-                            response = st.session_state.assistant.chat(suggestion)
+                            response = st.session_state.assistant.chat(enhanced_suggestion)
                             st.session_state.messages.append({"role": "assistant", "content": response})
                         st.rerun()
         
