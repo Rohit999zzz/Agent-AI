@@ -1,0 +1,11 @@
+langchain
+langchain-google-genai
+google-generativeai
+serpapi
+python-dotenv
+pypdf2
+pandas
+numpy
+matplotlib
+streamlit
+requests 
